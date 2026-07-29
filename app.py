@@ -7,6 +7,10 @@ from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from pillow_heif import register_heif_opener
+
+
+register_heif_opener()
 
 
 RESOLUTIONS = {
@@ -14,7 +18,7 @@ RESOLUTIONS = {
     "2560 x 1440": (2560, 1440),
     "3840 x 2160": (3840, 2160),
 }
-IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".heic", ".heif"}
 
 
 class WallpaperMaker:
@@ -100,7 +104,9 @@ class WallpaperMaker:
         footer = ctk.CTkFrame(self.root, fg_color="transparent")
         footer.grid(row=2, column=0, sticky="ew", padx=28, pady=(0, 24))
         footer.grid_columnconfigure(0, weight=1)
-        self.status = ctk.CTkLabel(footer, text="JPG / PNG に対応", text_color="#8d9099")
+        self.status = ctk.CTkLabel(
+            footer, text="JPG / PNG / HEIC に対応", text_color="#8d9099"
+        )
         self.status.grid(row=0, column=0, sticky="w")
         self.generate_button = ctk.CTkButton(
             footer, text="生成", width=110, command=self.generate_wallpaper
@@ -167,7 +173,10 @@ class WallpaperMaker:
     def choose_corkboard(self):
         selected = filedialog.askopenfilename(
             title="コルク背景画像を選択",
-            filetypes=[("画像ファイル", "*.jpg *.jpeg *.png"), ("すべてのファイル", "*.*")],
+            filetypes=[
+                ("画像ファイル", "*.jpg *.jpeg *.png *.heic *.heif"),
+                ("すべてのファイル", "*.*"),
+            ],
         )
         if selected:
             self.corkboard_path = Path(selected)
@@ -310,7 +319,7 @@ def create_wallpaper(folder, width, height, texture_path=None):
         if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
     ]
     if not paths:
-        raise ValueError("選択したフォルダに JPG / PNG 画像がありません。")
+        raise ValueError("選択したフォルダに JPG / PNG / HEIC 画像がありません。")
 
     random.shuffle(paths)
     photo_count = min(len(paths), random.randint(8, 15))

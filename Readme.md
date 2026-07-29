@@ -7,7 +7,7 @@ CustomTkinter でダークモード風の画面を作り、Pillow で画像の�
 ## 主な機能
 
 - 写真フォルダの選択
-- JPG / JPEG / PNG 画像の読み込み
+- JPG / JPEG / PNG / HEIC / HEIF 画像の読み込み
 - シームレスなコルク画像を背景として読み込み、壁紙全体にタイル表示
 - 1920x1080、2560x1440、3840x2160 の壁紙解像度に対応
 - コルク背景画像を指定しない場合は、自動生成のコルク風テクスチャを使用
@@ -26,41 +26,47 @@ CustomTkinter でダークモード風の画面を作り、Pillow で画像の�
 - Python 3
 - CustomTkinter
 - Pillow
+- pillow-heif
 
 Tkinter は CustomTkinter が内部で利用する Python の標準ライブラリです。環境によっては別途 Tkinter の導入が必要です。
 
 ## インストール
 
-プロジェクトフォルダで次のコマンドを実行してください。
+プロジェクトフォルダで、プロジェクト専用の仮想環境を作成して依存パッケージをインストールしてください。
 
-```bash
-python -m pip install customtkinter Pillow
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install customtkinter Pillow pillow-heif
 ```
 
-Windows で `python` コマンドが使えない場合は、次の形式も利用できます。
+PowerShell で仮想環境を有効化してからインストールする場合は、次のように実行できます。
 
-```bash
-py -m pip install customtkinter Pillow
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
+python -m pip install customtkinter Pillow pillow-heif
 ```
 
 ## 起動方法
 
-プロジェクトフォルダで次のコマンドを実行します。
+プロジェクトフォルダで、`.venv` の Python を指定して起動します。
 
-```bash
-python app.py
+```powershell
+.\.venv\Scripts\python.exe app.py
 ```
 
-Windows で `python` の代わりに `py` を使う場合:
+または、仮想環境を有効化してから起動します。
 
-```bash
-py app.py
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
+python app.py
 ```
 
 ## 使い方
 
 1. 「フォルダを選択」をクリックします。
-2. JPG、JPEG、または PNG 写真が入ったフォルダを選択します。
+2. JPG、JPEG、PNG、HEIC、または HEIF 写真が入ったフォルダを選択します。
 3. 必要に応じて「コルク背景を選択」をクリックし、背景に使うコルク画像を選択します。
 4. 「壁紙解像度」から出力サイズを選択します。
 5. 「生成」をクリックしてプレビューを作成します。
@@ -71,7 +77,7 @@ py app.py
 
 ### コルク背景画像について
 
-「コルク背景を選択」で JPG / JPEG / PNG 画像を指定できます。画像は壁紙全体を埋めるように横方向・縦方向へ繰り返し配置されます。継ぎ目を目立たせないため、上下左右が自然につながるシームレステクスチャを使用してください。
+「コルク背景を選択」で JPG / JPEG / PNG / HEIC / HEIF 画像を指定できます。画像は壁紙全体を埋めるように横方向・縦方向へ繰り返し配置されます。継ぎ目を目立たせないため、上下左右が自然につながるシームレステクスチャを使用してください。
 
 背景画像を選択しない場合は、アプリ内で生成したコルク風テクスチャが使われます。
 
@@ -89,15 +95,15 @@ py app.py
 
 必要なPythonパッケージがインストールされていません。次のコマンドを実行してください。
 
-```bash
-python -m pip install customtkinter Pillow
+```powershell
+.\.venv\Scripts\python.exe -m pip install customtkinter Pillow pillow-heif
 ```
 
 複数の Python をインストールしている場合は、アプリ起動に使用する Python と同じ実行ファイルで Pillow をインストールしてください。
 
 ### 写真が見つからないと表示される
 
-選択したフォルダに、拡張子が `.jpg`、`.jpeg`、または `.png` の画像を入れてください。
+選択したフォルダに、拡張子が `.jpg`、`.jpeg`、`.png`、`.heic`、または `.heif` の画像を入れてください。
 
 ### 生成に時間がかかる
 
