@@ -536,6 +536,9 @@ def make_polaroid(
 ):
     with Image.open(photo_path) as source:
         photo = ImageOps.exif_transpose(source).convert("RGB")
+        photo_aspect_ratio = photo.height / photo.width
+        # 極端な縦横比はレイアウト内に収めつつ、縦横写真の向きは維持する。
+        photo_aspect_ratio = max(0.55, min(1.8, photo_aspect_ratio))
         default_min = max(220, board_width // 8)
         default_max = max(280, board_width // 5)
         if max_width is None:
@@ -545,9 +548,13 @@ def make_polaroid(
             min_width = max(150, int(max_card_width * 0.92))
         card_width = random.randint(min_width, max(min_width, max_card_width))
         photo_width = card_width - 36
-        photo_height = int(photo_width * random.uniform(0.68, 0.82))
+        photo_height = int(photo_width * photo_aspect_ratio)
         if max_height is not None:
-            photo_height = min(photo_height, max(40, int(max_height) - 76))
+            max_photo_height = max(40, int(max_height) - 76)
+            if photo_height > max_photo_height:
+                photo_height = max_photo_height
+                photo_width = max(40, int(photo_height / photo_aspect_ratio))
+                card_width = photo_width + 36
         photo = ImageOps.fit(
             photo, (photo_width, photo_height), method=Image.Resampling.LANCZOS
         )
