@@ -121,6 +121,21 @@ python app.py
 
 ## トラブルシューティング
 
+## Windows用EXEの作成
+
+PyInstallerを使うと、Pythonやターミナルを起動せずに使えるEXEを作成できます。
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install pyinstaller
+.\.venv\Scripts\pyinstaller.exe --noconfirm --clean --windowed --name CorkboardWallpaperMaker --collect-all customtkinter --collect-all tkinterdnd2 app.py
+```
+
+作成されたEXEは `dist\CorkboardWallpaperMaker\CorkboardWallpaperMaker.exe` にあります。このEXEのショートカットをデスクトップなどに作成すると、ショートカットからアプリを起動できます。写真フォルダや背景画像のドラッグ＆ドロップもEXE版で利用できます。
+
+### EXE版の保管について
+
+PyInstallerのフォルダ形式で作成されるため、EXEファイルだけを移動せず、`CorkboardWallpaperMaker` フォルダ全体（`_internal` フォルダを含む）を保管してください。ショートカットはフォルダの外へ移動しても、EXEの場所が変わらない限り起動できます。
+
 ### `No module named 'PIL'` と表示される
 
 必要なPythonパッケージがインストールされていません。次のコマンドを実行してください。
