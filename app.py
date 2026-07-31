@@ -20,18 +20,31 @@ RESOLUTIONS = {
 }
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".heic", ".heif"}
 
+# スライダーの初期値（従来の見た目に近い既定）
+DEFAULT_PHOTO_COUNT = 12
+DEFAULT_ROTATION = 15
+DEFAULT_MARGIN = 50
+DEFAULT_CARD_SIZE = 80
+DEFAULT_JITTER = 25
+
 
 class WallpaperMaker:
     def __init__(self, root):
         self.root = root
         self.root.title("Corkboard Wallpaper Maker")
-        self.root.geometry("1120x780")
-        self.root.minsize(900, 650)
+        self.root.geometry("1280x820")
+        self.root.minsize(1040, 700)
 
         self.folder = None
         self.corkboard_path = None
         self.preview_image = None
         self.last_image = None
+
+        self.photo_count_var = tk.IntVar(value=DEFAULT_PHOTO_COUNT)
+        self.rotation_var = tk.IntVar(value=DEFAULT_ROTATION)
+        self.margin_var = tk.IntVar(value=DEFAULT_MARGIN)
+        self.card_size_var = tk.IntVar(value=DEFAULT_CARD_SIZE)
+        self.jitter_var = tk.IntVar(value=DEFAULT_JITTER)
 
         self._build_ui()
 
@@ -89,8 +102,14 @@ class WallpaperMaker:
         )
         self.corkboard_label.grid(row=3, column=0, sticky="w", pady=(4, 0))
 
-        preview_frame = ctk.CTkFrame(self.root, corner_radius=14, fg_color="#24252a")
-        preview_frame.grid(row=1, column=0, sticky="nsew", padx=28, pady=(0, 16))
+        body = ctk.CTkFrame(self.root, fg_color="transparent")
+        body.grid(row=1, column=0, sticky="nsew", padx=28, pady=(0, 16))
+        body.grid_columnconfigure(0, weight=1)
+        body.grid_columnconfigure(1, weight=0)
+        body.grid_rowconfigure(0, weight=1)
+
+        preview_frame = ctk.CTkFrame(body, corner_radius=14, fg_color="#24252a")
+        preview_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 16))
         preview_frame.grid_columnconfigure(0, weight=1)
         preview_frame.grid_rowconfigure(0, weight=1)
         self.preview = ctk.CTkLabel(
@@ -100,6 +119,82 @@ class WallpaperMaker:
             font=ctk.CTkFont(size=15),
         )
         self.preview.grid(row=0, column=0, sticky="nsew", padx=18, pady=18)
+
+        settings = ctk.CTkFrame(body, corner_radius=14, fg_color="#24252a", width=300)
+        settings.grid(row=0, column=1, sticky="ns")
+        settings.grid_propagate(False)
+        settings.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            settings,
+            text="配置の調整",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).grid(row=0, column=0, sticky="w", padx=18, pady=(18, 4))
+        ctk.CTkLabel(
+            settings,
+            text="生成時に反映されます",
+            text_color="#8d9099",
+            font=ctk.CTkFont(size=12),
+        ).grid(row=1, column=0, sticky="w", padx=18, pady=(0, 12))
+
+        self.photo_count_value = self._add_slider(
+            settings,
+            row=2,
+            label="写真枚数",
+            variable=self.photo_count_var,
+            from_=4,
+            to=20,
+            number_of_steps=16,
+            format_value=lambda v: f"{int(v)} 枚",
+        )
+        self.rotation_value = self._add_slider(
+            settings,
+            row=3,
+            label="回転の最大角度",
+            variable=self.rotation_var,
+            from_=0,
+            to=30,
+            number_of_steps=30,
+            format_value=lambda v: f"±{int(v)}°",
+        )
+        self.margin_value = self._add_slider(
+            settings,
+            row=4,
+            label="余白",
+            variable=self.margin_var,
+            from_=10,
+            to=120,
+            number_of_steps=110,
+            format_value=lambda v: f"{int(v)} px",
+        )
+        self.card_size_value = self._add_slider(
+            settings,
+            row=5,
+            label="カードサイズ",
+            variable=self.card_size_var,
+            from_=50,
+            to=95,
+            number_of_steps=45,
+            format_value=lambda v: f"{int(v)} %",
+        )
+        self.jitter_value = self._add_slider(
+            settings,
+            row=6,
+            label="位置のゆらぎ",
+            variable=self.jitter_var,
+            from_=0,
+            to=80,
+            number_of_steps=80,
+            format_value=lambda v: f"{int(v)} %",
+        )
+
+        ctk.CTkButton(
+            settings,
+            text="既定値に戻す",
+            fg_color="#3f424a",
+            hover_color="#555963",
+            command=self.reset_sliders,
+        ).grid(row=7, column=0, sticky="ew", padx=18, pady=(8, 18))
 
         footer = ctk.CTkFrame(self.root, fg_color="transparent")
         footer.grid(row=2, column=0, sticky="ew", padx=28, pady=(0, 24))
@@ -133,6 +228,63 @@ class WallpaperMaker:
         )
         self.save_button.grid(row=0, column=3, padx=(8, 0))
 
+    def _add_slider(self, parent, row, label, variable, from_, to, number_of_steps, format_value):
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.grid(row=row, column=0, sticky="ew", padx=18, pady=(0, 14))
+        frame.grid_columnconfigure(0, weight=1)
+
+        title_row = ctk.CTkFrame(frame, fg_color="transparent")
+        title_row.grid(row=0, column=0, sticky="ew")
+        title_row.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(title_row, text=label, text_color="#d0d2d8").grid(
+            row=0, column=0, sticky="w"
+        )
+        value_label = ctk.CTkLabel(
+            title_row,
+            text=format_value(variable.get()),
+            text_color="#d8895b",
+            font=ctk.CTkFont(weight="bold"),
+        )
+        value_label.grid(row=0, column=1, sticky="e")
+
+        def on_change(value, label_widget=value_label, formatter=format_value):
+            label_widget.configure(text=formatter(value))
+
+        ctk.CTkSlider(
+            frame,
+            from_=from_,
+            to=to,
+            number_of_steps=number_of_steps,
+            variable=variable,
+            command=on_change,
+            progress_color="#c76845",
+            button_color="#d8895b",
+            button_hover_color="#e49a6d",
+        ).grid(row=1, column=0, sticky="ew", pady=(8, 0))
+        return value_label
+
+    def reset_sliders(self):
+        self.photo_count_var.set(DEFAULT_PHOTO_COUNT)
+        self.rotation_var.set(DEFAULT_ROTATION)
+        self.margin_var.set(DEFAULT_MARGIN)
+        self.card_size_var.set(DEFAULT_CARD_SIZE)
+        self.jitter_var.set(DEFAULT_JITTER)
+        self.photo_count_value.configure(text=f"{DEFAULT_PHOTO_COUNT} 枚")
+        self.rotation_value.configure(text=f"±{DEFAULT_ROTATION}°")
+        self.margin_value.configure(text=f"{DEFAULT_MARGIN} px")
+        self.card_size_value.configure(text=f"{DEFAULT_CARD_SIZE} %")
+        self.jitter_value.configure(text=f"{DEFAULT_JITTER} %")
+        self.status.configure(text="スライダーを既定値に戻しました")
+
+    def _current_settings(self):
+        return {
+            "photo_count": int(self.photo_count_var.get()),
+            "max_rotation": float(self.rotation_var.get()),
+            "margin": int(self.margin_var.get()),
+            "card_size": int(self.card_size_var.get()) / 100.0,
+            "jitter": int(self.jitter_var.get()) / 100.0,
+        }
+
     def choose_folder(self):
         selected = filedialog.askdirectory(title="写真フォルダを選択")
         if selected:
@@ -160,13 +312,14 @@ class WallpaperMaker:
         self._start_generation(width, height)
 
     def _start_generation(self, width, height):
+        settings = self._current_settings()
         self.generate_button.configure(state="disabled")
         self.shuffle_button.configure(state="disabled")
         self.save_button.configure(state="disabled")
         self.status.configure(text="写真をグリッドに配置しています...")
         threading.Thread(
             target=self._generate_in_background,
-            args=(width, height, self.corkboard_path),
+            args=(width, height, self.corkboard_path, settings),
             daemon=True,
         ).start()
 
@@ -183,9 +336,19 @@ class WallpaperMaker:
             self.corkboard_label.configure(text=f"背景: {self.corkboard_path.name}")
             self.status.configure(text="コルク背景を設定しました")
 
-    def _generate_in_background(self, width, height, corkboard_path):
+    def _generate_in_background(self, width, height, corkboard_path, settings):
         try:
-            image = create_wallpaper(self.folder, width, height, corkboard_path)
+            image = create_wallpaper(
+                self.folder,
+                width,
+                height,
+                corkboard_path,
+                photo_count=settings["photo_count"],
+                max_rotation=settings["max_rotation"],
+                margin_px=settings["margin"],
+                card_size_ratio=settings["card_size"],
+                jitter_ratio=settings["jitter"],
+            )
         except Exception as error:
             error_message = str(error)
             self.root.after(0, lambda: self._generation_failed(error_message))
@@ -220,6 +383,9 @@ class WallpaperMaker:
 
     def _generation_failed(self, error):
         self.generate_button.configure(state="normal")
+        self.shuffle_button.configure(state="normal")
+        if self.last_image is not None:
+            self.save_button.configure(state="normal")
         self.status.configure(text="生成に失敗しました")
         messagebox.showerror("生成エラー", error)
 
@@ -240,7 +406,10 @@ def create_corkboard(size, texture_path=None):
             scale = min(width / texture.width, height / texture.height, 1.0)
             if scale < 1.0:
                 texture = texture.resize(
-                    (max(1, int(texture.width * scale)), max(1, int(texture.height * scale))),
+                    (
+                        max(1, int(texture.width * scale)),
+                        max(1, int(texture.height * scale)),
+                    ),
                     Image.Resampling.LANCZOS,
                 )
 
@@ -269,7 +438,43 @@ def create_corkboard(size, texture_path=None):
     return board
 
 
-def make_polaroid(photo_path, board_width, max_width=None, max_height=None):
+def add_board_lighting(board):
+    """Apply a soft upper-left light and subtle edge falloff to the corkboard."""
+    width, height = board.size
+    overlay = Image.new("RGBA", board.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay, "RGBA")
+
+    light_radius = int(max(width, height) * 0.78)
+    light_center = (int(width * 0.2), int(height * 0.12))
+    draw.ellipse(
+        (
+            light_center[0] - light_radius,
+            light_center[1] - light_radius,
+            light_center[0] + light_radius,
+            light_center[1] + light_radius,
+        ),
+        fill=(255, 220, 170, 42),
+    )
+    overlay = overlay.filter(ImageFilter.GaussianBlur(max(24, width // 13)))
+    lit_board = Image.alpha_composite(board, overlay)
+
+    vignette = Image.new("L", board.size, 0)
+    vignette_draw = ImageDraw.Draw(vignette)
+    inset = -int(max(width, height) * 0.16)
+    vignette_draw.ellipse((inset, inset, width - inset, height - inset), fill=180)
+    vignette = vignette.filter(ImageFilter.GaussianBlur(max(32, width // 10)))
+    shadow = Image.new("RGBA", board.size, (37, 20, 12, 0))
+    shadow.putalpha(ImageOps.invert(vignette).point(lambda value: value // 3))
+    return Image.alpha_composite(lit_board, shadow)
+
+
+def make_polaroid(
+    photo_path,
+    board_width,
+    max_width=None,
+    max_height=None,
+    max_rotation=15.0,
+):
     with Image.open(photo_path) as source:
         photo = ImageOps.exif_transpose(source).convert("RGB")
         default_min = max(220, board_width // 8)
@@ -284,35 +489,60 @@ def make_polaroid(photo_path, board_width, max_width=None, max_height=None):
         photo_height = int(photo_width * random.uniform(0.68, 0.82))
         if max_height is not None:
             photo_height = min(photo_height, max(40, int(max_height) - 76))
-        photo = ImageOps.fit(photo, (photo_width, photo_height), method=Image.Resampling.LANCZOS)
+        photo = ImageOps.fit(
+            photo, (photo_width, photo_height), method=Image.Resampling.LANCZOS
+        )
 
     card_height = photo_height + 76
     card = Image.new("RGBA", (card_width, card_height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(card)
     draw.rectangle((4, 5, card_width - 2, card_height - 1), fill=(255, 255, 252, 255))
+    draw.line((5, 5, card_width - 3, 5), fill=(255, 255, 255, 230), width=2)
+    draw.line(
+        (card_width - 3, 6, card_width - 3, card_height - 2),
+        fill=(196, 191, 180, 115),
+        width=2,
+    )
+    draw.line(
+        (5, card_height - 2, card_width - 3, card_height - 2),
+        fill=(196, 191, 180, 115),
+        width=2,
+    )
     card.paste(photo, (18, 19))
 
     # ピンは写真と一緒に回転するため、カード上に描画する。
     pin_x = card_width // 2
     pin_y = 13
     draw.ellipse((pin_x - 16, pin_y - 12, pin_x + 16, pin_y + 18), fill=(70, 34, 22, 120))
-    pin_color = random.choice(((207, 48, 44, 255), (236, 177, 35, 255), (43, 116, 172, 255)))
+    pin_color = random.choice(
+        ((207, 48, 44, 255), (236, 177, 35, 255), (43, 116, 172, 255))
+    )
     draw.ellipse((pin_x - 13, pin_y - 13, pin_x + 13, pin_y + 13), fill=pin_color)
     draw.ellipse((pin_x - 7, pin_y - 8, pin_x + 1, pin_y), fill=(255, 255, 255, 130))
     draw.line((pin_x, pin_y + 12, pin_x, pin_y + 28), fill=(70, 70, 70, 220), width=3)
 
-    angle = random.uniform(-15, 15)
+    angle = random.uniform(-max_rotation, max_rotation) if max_rotation > 0 else 0.0
     rotated = card.rotate(angle, resample=Image.Resampling.BICUBIC, expand=True)
     shadow = Image.new("RGBA", rotated.size, (0, 0, 0, 0))
-    shadow.paste((22, 12, 8, 105), (10, 12), rotated.getchannel("A"))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(9))
+    shadow.paste((22, 12, 8, 125), (11, 14), rotated.getchannel("A"))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(11))
     result = Image.new("RGBA", rotated.size, (0, 0, 0, 0))
     result.alpha_composite(shadow)
     result.alpha_composite(rotated)
     return result
 
 
-def create_wallpaper(folder, width, height, texture_path=None):
+def create_wallpaper(
+    folder,
+    width,
+    height,
+    texture_path=None,
+    photo_count=DEFAULT_PHOTO_COUNT,
+    max_rotation=DEFAULT_ROTATION,
+    margin_px=DEFAULT_MARGIN,
+    card_size_ratio=DEFAULT_CARD_SIZE / 100.0,
+    jitter_ratio=DEFAULT_JITTER / 100.0,
+):
     paths = [
         path
         for path in folder.iterdir()
@@ -322,17 +552,24 @@ def create_wallpaper(folder, width, height, texture_path=None):
         raise ValueError("選択したフォルダに JPG / PNG / HEIC 画像がありません。")
 
     random.shuffle(paths)
-    photo_count = min(len(paths), random.randint(8, 15))
+    photo_count = max(1, min(int(photo_count), len(paths)))
     board = create_corkboard((width, height), texture_path).convert("RGBA")
-    margin = max(30, width // 50)
+    board = add_board_lighting(board)
+    # 解像度に合わせて余白をスケール（基準: 1920px 幅）
+    margin = max(8, int(margin_px * width / 1920))
 
     selected_paths = paths[:photo_count]
     aspect_ratio = width / height
     columns = min(
         range(1, photo_count + 1),
         key=lambda candidate: (
-            abs(math.log((candidate / math.ceil(photo_count / candidate)) / aspect_ratio))
-            + (candidate * math.ceil(photo_count / candidate) - photo_count) / photo_count,
+            abs(
+                math.log(
+                    (candidate / math.ceil(photo_count / candidate)) / aspect_ratio
+                )
+            )
+            + (candidate * math.ceil(photo_count / candidate) - photo_count)
+            / photo_count,
             candidate,
         ),
     )
@@ -342,19 +579,27 @@ def create_wallpaper(folder, width, height, texture_path=None):
     slots = list(range(columns * rows))
     random.shuffle(slots)
 
+    card_fill = max(0.45, min(0.98, float(card_size_ratio)))
+    jitter = max(0.0, min(1.0, float(jitter_ratio)))
+    max_rotation = max(0.0, float(max_rotation))
+
     for photo_path, slot in zip(selected_paths, slots):
         column = slot % columns
         row = slot // columns
         card = make_polaroid(
             photo_path,
             width,
-            max_width=cell_width * 0.80,
-            max_height=cell_height * 0.80,
+            max_width=cell_width * card_fill,
+            max_height=cell_height * card_fill,
+            max_rotation=max_rotation,
         )
         center_x = margin + (column + 0.5) * cell_width
         center_y = margin + (row + 0.5) * cell_height
-        jitter_x = random.uniform(-cell_width * 0.025, cell_width * 0.025)
-        jitter_y = random.uniform(-cell_height * 0.025, cell_height * 0.025)
+        # ゆらぎ 100% でセル半幅程度までずれる
+        jitter_x = random.uniform(-cell_width * 0.5 * jitter, cell_width * 0.5 * jitter)
+        jitter_y = random.uniform(
+            -cell_height * 0.5 * jitter, cell_height * 0.5 * jitter
+        )
         x = int(center_x + jitter_x - card.width / 2)
         y = int(center_y + jitter_y - card.height / 2)
         x = max(margin, min(x, width - card.width - margin))
